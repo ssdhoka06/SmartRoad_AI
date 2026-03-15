@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+    exec(f.read())
+    ~~~~^^^^^^^^^^
+  File "<string>", line 134, in <module>
+  File "<string>", line 70, in generate_metrics
+  File "C:\Users\shakt\AppData\Local\Programs\Python\Python313\Lib\site-packages\sklearn\utils\_param_validation.py", line 216, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\shakt\AppData\Local\Programs\Python\Python313\Lib\site-packages\sklearn\metrics\_classification.py", line 2693, in classification_report
+    raise ValueError(
+    ...<3 lines>...
+    )
+ValueError: Number of classes, 1, does not match size of target_names, 3. Try specifying the labels parameter
