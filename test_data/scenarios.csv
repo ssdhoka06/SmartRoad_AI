@@ -1,0 +1,7 @@
+scenario_id,file_name,expected_action,description
+1,scenario_1.mp4,2,Driver using phone while looking ahead
+2,scenario_2.mp4,2,Driver using phone while looking away
+3,scenario_3.mp4,2,Driver sleeping / eyes closed
+4,scenario_4.mp4,2,Driver smoking
+5,scenario_5.mp4,0,Driver fully attentive and safe
+6,scenario_6.mp4,1,Driver briefly glancing at phone then away

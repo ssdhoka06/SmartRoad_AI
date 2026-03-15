@@ -1,6 +1,10 @@
 # SmartRoad AI 
 
-An intelligent, context-aware traffic safety enforcement system that goes beyond speed cameras it understands driver behavior, detects distraction in real time, and automatically generates e-challans using Reinforcement Learning.
+An intelligent, context-aware traffic safety enforcement system designed to tackle the critical issue of distracted driving. Road safety enforcement traditionally relies on single-frame speed cameras which are incapable of identifying sustained dangerous behaviors like texting, looking away from the road, or drowsiness. SmartRoad AI addresses this gap by employing a robust three-layer artificial intelligence pipeline. 
+
+First, a SegFormer semantic segmentation model analyzes the spatial layout of the vehicle cabin, identifying zones like the driver's seat and the steering wheel. Second, a YOLOv8 object detection model operates in real-time to pinpoint the exact locations of phones, cigarettes, faces, and seatbelts. Finally, we introduce a novel Attention Score metric fed into a Reinforcement Learning agent (PPO). Instead of raising an alert on a single anomalous frame—which often leads to false positives—the RL agent tracks sustained behavioral changes and makes a contextual, highly reliable decision to flag a genuine violation.
+
+Once a prolonged violation is confirmed, our automated extraction pipeline logs the event, saves the evidence frame, and sets the foundation for an automatic E-Challan generation system linked to traffic authority databases. This project demonstrates state-of-the-art applied Computer Vision and RL merging for proactive road safety.
 
 ---
 
@@ -157,3 +161,31 @@ Once the RL agent confirms a violation, the system triggers a five-step enforcem
 - Integration with national vehicle registration database
 - Edge deployment on Raspberry Pi / Jetson Nano for in-vehicle use
 - Attention Score tracking — rolling distraction percentage over a 10-minute window
+
+---
+
+## Module Overview
+
+| Component | File | Description |
+|-----------|------|-------------|
+| Environment | `rl_environment.py` | Custom Gymnasium environment defining state/action/rewards |
+| State Vector | `obs_builder.py` | Reduces high-dimensional visual output into the 10-D observation state |
+| Logic Pipeline | `pipeline.py` | Core handler for SegFormer and YOLOv8 real-time inference |
+| Enforcement | `alert_logger.py` | Triggers violation logs and saves confirmation image evidence |
+| Engine | `final_integrate.py` | Final end-to-end event execution loop merging all layers |
+
+## How to Run
+
+1. Clone the repository and navigate or open a terminal in the folder.
+2. Create and activate a virtual environment (e.g. `python -m venv venv` and `venv\Scripts\activate` on Windows).
+3. Install dependencies: `pip install -r requirements.txt`
+4. Run the final integrated dashboard: `python final_integrate.py`
+
+## Team Framework
+| Member | Role | Key Contribution |
+|--------|------|------------------|
+| **Sachi** | Pipeline Lead | End-to-end `final_integrate.py` tying Seg+YOLO+RL |
+| **Ragini** | RL Env Lead | Gymnasium `rl_environment.py` and `obs_builder.py` |
+| **Nikhil** | RL Agent Lead | PPO model training and hyperparameters |
+| **Shakti** | Metrics Lead | Precision/Recall statistics and `attention_score.py` metrics |
+| **Sanat** | Data & Docs | Project roadmap consolidation, scenario sets, and artifact summaries |

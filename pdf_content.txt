@@ -1,0 +1,381 @@
+SmartRoad AI  
+AI Driver Distraction Detection System  
+ 
+Tech Stack & 4-Day Project Roadmap  
+ML2308 Artificial Intelligence | IEEE CIS VIT Pune  
+Team: Ragini | Nikhil | Shakti | Sachi | Sanat  
+Start Date: Sunday, March 12, 2026  |  Submission: Thursday, March 16, 2026  
+  Tech Stack 
+Complete technology stack for SmartRoad AI — AI Driver Distraction Detection System.  
+ 
+Layer Component  Technology  Role / Purpose  Status 
+Environment  Runtime Python 3.10+  Base language for entire 
+pipeline Done 
+Environment  Package Mgmt  pip + venv  Isolated virtual environment  Done 
+Environment  GPU / Tensor  PyTorch (CUDA)  Deep learning inference 
+backend Done 
+Layer 1 — 
+Seg Model SegFormer-b0  Semantic segmentation 
+(HuggingFace)  Done 
+Layer 1 — 
+Seg Library HuggingFace Transformers  Model loading & inference 
+API Done 
+Layer 1 — 
+Seg Dataset Basis  ADE20K (150 classes)  Pre-trained scene 
+understanding  Done 
+Layer 2 — Det Model YOLOv8 Nano  Real-time object detection  Done 
+Layer 2 — Det  Library Ultralytics  YOLO model loading & 
+inference Done 
+Layer 2 — Det  Vision OpenCV (cv2)  Frame capture, overlay 
+rendering Done 
+Layer 3 — RL Framework  Stable-Baselines3  PPO agent training  Pending 
+Layer 3 — RL  Environment  Gymnasium (gym)  Custom RL environment 
+definition Pending 
+Layer 3 — RL Algorithm PPO (Proximal Policy Opt.)  Decision-making agent  Pending 
+Integration  Pipeline pipeline.py  Combined Seg + YOLO live 
+feed Done 
+Integration  RL Obs Builder  obs_builder.py  Constructs RL observation 
+vectors Pending 
+Integration  Attention Score  Custom metric module  Novel distraction severity 
+metric Pending 
+Evaluation  Metrics scikit-learn Precision, Recall, F1 scoring  Pending 
+Evaluation  Logging Python logging / CSV  Violation event logging  Pending 
+Utilities Image/Array  NumPy + Pillow  Array ops, image 
+preprocessing  Done 
+ 
+  Team & Ownership 
+ 
+Member Primary Role  Owns Key Deliverable  
+Ragini RL Environment Lead  rl_environment.py (Gymnasium), 
+obs_builder.py, RL -pipeline integration  Working RL env + obs 
+vectors 
+Nikhil PPO Agent Lead  PPO training script, agent evaluation, 
+reward tuning, model saving  Trained PPO model 
+(.zip) 
+Shakti Attention Score & 
+Metrics Attention Score metric, gaze/phone 
+duration tracker, precision/recall/F1 
+evaluation metrics.py + eval 
+report 
+Sachi Pipeline Integration 
+Lead Full system integration (Seg + YOLO + RL 
+agent), alert + logging module, final demo 
+video Live integrated system 
++ demo 
+Sanat Data & Documentation  Violation scenario scripting, test data 
+collection, project documentation & course 
+alignment write-up  Test scenarios + final 
+doc 
+ 
+  4-Day Project Roadmap 
+Today is Sunday. Final submission is Thursday morning. The roadmap below covers Days 1–4 with 
+individual task cards per team member. Each task is self-contained with exact steps so work can 
+proceed in parallel.  
+ 
+  DAY 1 — SUNDAY (TODAY)    March 12    |   RL Environment + Observation 
+Space 
+ 
+🧠  Ragini  — Build rl_environment.py (Gymnasium Custom Env)  
+1. Create rl_environment.py in your project folder. Import gymnasium, numpy, and import the pipeline 
+(SegFormer + YOLO outputs) from pipeline.py.  
+2. Define class DriverEnv(gymnasium.Env). Set metadata = {'render_modes': ['human']}.  
+3. Define self.observation_space using gymnasium.spaces.Box: shape should be a flat vector of ~10 
+floats — phone_detected (0/1), cigarette_detected (0/1), driver_face_detected (0/1), gaze_away (0/1), 
+phone_near_face (0/1), phone_duration (float 0–30), gaze_duration (float 0–30), seg_driver_zone (0/1), 
+seg_steering_visible (0/1), activity_count (int 0–10). Dtype: np.float32.  
+4. Define self.action_space using gymnasium.spaces.Discrete(3): 0 = All Clear, 1 = Monitor, 2 = Violation.  
+5. Implement reset(self, seed=None): reset all internal counters (phone_duration=0, gaze_duration=0, 
+step_count=0), return (obs_vector, info_dict).  
+6. Implement step(self, action): call pipeline to get latest frame detections → build obs vector → compute 
+reward using: +1 if action==2 and real violation, -1 if action==2 and no violation (false alert), -2 if 
+action!=2 and real violation occurred. Return (obs, reward, terminated, truncated, info).  
+7. Implement _get_obs(self): reads the detection results from YOLO (phone, cigarette, face) and seg 
+outputs (driver zone, steering zone), builds and returns the numpy float32 obs vector.  
+8. Add a __main__ block: env = DriverEnv(); obs, _ = env.reset(); print(obs). Run it and confirm no errors. 
+Share output screenshot with team.  
+Output ✓  rl_environment.py — runnable Gymnasium env with correct obs/action spaces  
+Needs Needs pipeline.py working (already done) — run it first to confirm webcam captures correctly  
+ 
+📋  Sanat  — Violation Scenario Design + Test Data Collection  
+1. Create a document called test_scenarios.md listing 6 clear test scenarios for the system: (1) Driver 
+using phone while looking ahead, (2) Driver using phone while looking away, (3) Driver sleeping / eyes 
+closed, (4) Driver smoking, (5) Driver fully attentive and safe, (6) Driver briefly glancing at phone then 
+away. 
+2. For each scenario, write: expected YOLO detections, expected SegFormer zone, expected RL action 
+(0/1/2), and how many seconds it should persist before flagging.  
+3. Record short 10–15 second video clips simulating each scenario using a team member acting in front 
+of the webcam. Save as scenario_1.mp4 ... scenario_6.mp4 in a /test_data/ folder.  
+4. Create a metadata CSV: test_data/scenarios.csv with columns: scenario_id, file_name, 
+expected_action, description.  5. Share the /test_data/ folder and scenarios.csv with Shakti (she needs it for metrics on Day 2).  
+Output ✓  test_scenarios.md + 6 video clips + scenarios.csv  
+Needs No dependencies — can start immediately  
+ 
+📐  Shakti  — Attention Score Metric Design + Duration Tracker Skeleton  
+1. Create attention_score.py. Define the Attention Score formula: AttentionScore = (phone_duration * 0.4 
++ gaze_away_duration * 0.3 + cigarette_duration * 0.2 + activity_count * 0.1) normalized to 0–100. 
+Comment explaining each weight.  
+2. Implement class DurationTracker: maintains per-activity counters (phone_timer, gaze_timer, 
+cigarette_timer). Has methods: update(detections_dict, fps=30) which increments timers if activity 
+detected, and reset_all() to zero all counters.  
+3. Implement compute_attention_score(tracker) function that takes a DurationTracker instance and 
+returns a float 0–100.  
+4. Write a simple test: simulate 90 frames (~3 seconds) of phone detected, compute score, print result. 
+Confirm score > 0.  
+5. Stub out evaluate_model(predictions, ground_truth) function that will take lists and return precision, 
+recall, F1 — leave body as pass for now (Day 2 task).  
+6. Share attention_score.py with Ragini so she can import it into rl_environment.py for obs construction.  
+Output ✓  attention_score.py with DurationTracker + compute_attention_score working  
+Needs No dependencies — can start immediately  
+ 
+🤖  Nikhil  — PPO Training Script Skeleton  
+1. Create train_ppo.py. Import stable_baselines3.PPO and the DriverEnv from rl_environment (it won't be 
+final yet — use a stub env for now).  
+2. Create a stub StubDriverEnv that inherits gymnasium.Env with the same obs/action spaces as the real 
+env, but reset() returns random obs and step() returns random obs, random reward between -2 and +1, 
+False, False, {}.  
+3. In train_ppo.py: instantiate StubDriverEnv, create PPO('MlpPolicy', env, verbose=1, learning_rate=3e-
+4, n_steps=512, batch_size=64, n_epochs=10), call model.learn(total_timesteps=5000), save model as 
+ppo_stub.zip.  
+4. Run train_ppo.py and confirm training loop runs without errors. Share screenshot of training output log.  
+5. Read SB3 PPO documentation for MlpPolicy parameter tuning (n_steps, clip_range, ent_coef) — write 
+brief notes in a ppo_notes.md file for use on Day 2.  
+Output ✓  train_ppo.py running with StubEnv + ppo_notes.md  
+Needs Coordinate with Ragini — will swap StubEnv for DriverEnv on Day 2  
+ 
+🔌  Sachi  — Integration Architecture + Alert Logger Module  
+1. Read pipeline.py in full. Map out exactly: what variables are exposed, what functions exist, what the 
+main loop structure is.  2. Create integrate.py — the master integration file that will eventually tie all modules together. For now, 
+import pipeline, define main() as a placeholder loop.  
+3. Create alert_logger.py: class ViolationLogger with methods log_violation(action, obs_vector, 
+timestamp, frame) that writes a row to violations.csv with columns: timestamp, action_label (All 
+Clear/Monitor/Violation), phone_detected, gaze_away, attention_score, frame_path.  
+4. Implement save_frame(frame, violation_type) in alert_logger.py that saves the OpenCV frame as a .jpg 
+to /evidence/ folder with a timestamped filename.  
+5. Test ViolationLogger standalone: create an instance, call log_violation with dummy data, confirm 
+violations.csv is created and frame is saved.  
+6. Document the integration plan as a comment block at the top of integrate.py: module load order, data 
+flow (pipeline → obs_builder → rl_agent → logger), so all team members know the final wiring plan.  
+Output ✓  alert_logger.py working + integrate.py scaffolded + integration plan documented  
+Needs Needs pipeline.py (done) — review it first before building  
+ 
+    DAY 2 — MONDAY    March 13    |   RL Training + Obs Builder + Metrics  
+ 
+🔗  Ragini  — obs_builder.py + Wire RL Env to Live Pipeline  
+1. Create obs_builder.py. Import from attention_score.py (DurationTracker, compute_attention_score). 
+Implement build_observation(yolo_results, seg_results, tracker) that: extracts phone/cigarette/face 
+presence from YOLO bounding boxes, extracts driver_zone and steering_zone booleans from 
+SegFormer pixel mask, updates the DurationTracker, returns a np.float32 array of shape (10,).  
+2. In rl_environment.py, replace the _get_obs stub with a real call to obs_builder.build_observation(), 
+passing live YOLO and SegFormer outputs from the pipeline.  
+3. Run rl_environment.py with webcam live: call env.reset() then loop 
+env.step(env.action_space.sample()) 30 times. Print each obs vector — confirm values are changing 
+frame by frame.  
+4. Fix any shape or dtype mismatches (all values must be np.float32 in a flat 1D array). Share working 
+obs printout with Nikhil.  
+Output ✓  obs_builder.py integrated into rl_environment.py — live obs vectors confirmed  
+Needs Needs attention_score.py from Shakti (Day 1 deliverable)  
+ 
+🏋  Nikhil  — Swap to Real DriverEnv + Begin PPO Training  
+1. Replace StubDriverEnv in train_ppo.py with the real DriverEnv from rl_environment.py (coordinate with 
+Ragini — she confirms obs vectors are working first).  
+2. Run a short training: total_timesteps=2000 and observe reward trajectory in logs. If rewards are all -2 
+(agent always missing violations), tune: reduce entropy coefficient to ent_coef=0.01, reduce n_steps to 
+256. 
+3. Once basic training runs without crash for 2000 steps, increase to total_timesteps=10000. Save model 
+as ppo_v1.zip.  
+4. Implement evaluate_agent(model, env, n_episodes=20): runs 20 episodes, collects actions taken, 
+returns list of (obs, action, reward) tuples for Shakti to compute metrics on.  
+5. Save evaluation results to eval_results.csv (columns: episode, step, action, reward, obs_vector). Share 
+with Shakti.  
+Output ✓  ppo_v1.zip (trained model) + eval_results.csv  
+Needs Needs DriverEnv fully working from Ragini (morning sync)  
+ 
+📊  Shakti  — Evaluation Metrics — Precision, Recall, F1  
+1. In evaluate_model() function in attention_score.py: take predictions (list of ints 0/1/2) and ground_truth 
+(from scenarios.csv) and compute per-class precision, recall, F1 using 
+sklearn.metrics.classification_report.  
+2. Run eval against Nikhil's eval_results.csv using Sanat's ground truth scenario labels. Map action 2 = 
+positive (violation), actions 0/1 = negative.  
+3. Generate metrics_report.txt containing: overall accuracy, per-class precision/recall/F1, confusion matrix 
+printed as text.  4. Compute the Attention Score on Sanat's 6 test video clips: run each clip through pipeline + obs_builder 
+(stub or real), record AttentionScore per frame, plot score over time using matplotlib and save as 
+attention_score_plot.png.  
+5. Share metrics_report.txt and attention_score_plot.png with Sachi for the integration demo.  
+Output ✓  metrics_report.txt + attention_score_plot.png  
+Needs Needs eval_results.csv from Nikhil + scenarios.csv from Sanat  
+ 
+⚙  Sachi  — Full System Integration — First End-to-End Run  
+1. In integrate.py: import pipeline, obs_builder, rl_environment, alert_logger. Load the trained PPO model: 
+model = PPO.load('ppo_v1.zip').  
+2. Build the main inference loop: (1) grab frame from pipeline, (2) run YOLO + SegFormer, (3) call 
+obs_builder.build_observation(), (4) call model.predict(obs), (5) if action == 2 call 
+alert_logger.log_violation() + save_frame(), (6) display frame with cv2 overlays.  
+3. Add overlay text to the frame: show current action label (All Clear / Monitor / Violation) in top-left corner, 
+show Attention Score from attention_score.py in top-right corner. Use cv2.putText with green for All 
+Clear, yellow for Monitor, red for Violation.  
+4. Test the full loop on the live webcam. Simulate a phone violation (hold phone to face) and confirm: 
+YOLO detects it, obs vector updates, PPO outputs action, logger records it, frame is saved.  
+5. Record any integration bugs in bugs.md and coordinate with respective module owners to fix same 
+day. 
+Output ✓  End-to-end system running on webcam with overlays and logging  
+Needs Needs ppo_v1.zip from Nikhil + alert_logger.py (own Day 1) + obs_builder from Ragini  
+ 
+📄  Sanat  — Documentation — System Architecture + Course Alignment  
+1. Write system_architecture.md: include the pipeline diagram (text-based: Camera → SegFormer → 
+YOLO → obs_builder → PPO Agent → Logger), description of each module and its file, input/output 
+specification for each layer.  
+2. Write course_alignment.md: map each AI concept from the ML2308 course to a specific component in 
+SmartRoad AI — Intelligent Agents (PPO), State Space (obs vector), Production Systems (violation 
+logging), Object Detection as AI Application (YOLOv8), Rational Decision Making (reward function).  
+3. Update the project README.md: add How to Run section (step-by-step from cloning to running 
+integrate.py), add Module Overview table listing all Python files and their roles, add Team section with 
+roles. 
+4. Create a simple PowerPoint or PDF summary slide (5 slides max): Project Overview, Architecture 
+Diagram, Key Results (leave placeholder for metrics), Novel Contribution (Attention Score), and Next 
+Steps. 
+Output ✓  system_architecture.md + course_alignment.md + updated README + summary slides  
+Needs Needs final file list from Sachi (today's integration plan)  
+ 
+    DAY 3 — TUESDAY    March 14    |   Refinement + Extended Training + Testing  
+ 
+🔧  Ragini  — RL Environment Hardening + Stress Testing  
+1. Run rl_environment.py under 200 continuous steps without pause. Monitor for: memory leaks (check 
+RAM), frame drops (print fps), incorrect obs values (print obs each 50 steps). Fix any issues found.  
+2. Add a render(mode='human') method to DriverEnv: display the current frame using cv2.imshow for 
+debugging during RL training.  
+3. Add episode termination logic: episode ends (terminated=True) after 300 steps OR when 3 violations 
+are confirmed in a single episode. This keeps training episodes finite.  
+4. Validate that gymnasium.utils.env_checker.check_env(env) passes without errors. This is the official 
+SB3 compatibility check.  
+5. Share the final stable rl_environment.py with Nikhil for extended training.  
+Output ✓  Hardened rl_environment.py passing check_env()  
+Needs Coordinate with Nikhil for re -training after env updates  
+ 
+🚀  Nikhil  — Extended PPO Training + Hyperparameter Tuning  
+1. Train ppo_v2.zip with hardened DriverEnv, total_timesteps=50000. Use: learning_rate=1e-4, 
+n_steps=1024, batch_size=128, n_epochs=10, clip_range=0.2, ent_coef=0.005.  
+2. Plot episode reward mean over training steps (SB3 logs this automatically in monitor.csv if you wrap 
+env with Monitor from stable_baselines3.common.monitor). Save reward plot as training_curve.png.  
+3. Run evaluate_agent(model, env, n_episodes=50) with ppo_v2.zip. Save to eval_results_v2.csv.  
+4. Compare eval_results.csv (v1) vs eval_results_v2.csv (v2): count action distribution — how many times 
+agent chose 0/1/2. Share comparison with Shakti for updated metrics.  
+Output ✓  ppo_v2.zip + training_curve.png + eval_results_v2.csv  
+Needs Needs hardened env from Ragini  
+ 
+📈  Shakti  — Final Metrics + Attention Score Calibration  
+1. Rerun evaluate_model() on eval_results_v2.csv (from Nikhil). Generate updated metrics_report_v2.txt.  
+2. Calibrate Attention Score weights using test videos from Sanat: run each scenario, check if score > 70 
+for obvious violations and < 30 for safe driving. Adjust weights in attention_score.py if needed.  
+3. Implement threshold logic: if AttentionScore >= 60 → recommend Monitor, if AttentionScore >= 80 → 
+recommend Violation. Add this as get_recommended_action(score) function.  
+4. Create evaluation_summary.md: table with scenario ID, expected action, predicted action, attention 
+score, correct/incorrect. Compute overall accuracy as number of correct predictions / 6.  
+Output ✓  metrics_report_v2.txt + calibrated attention_score.py + evaluation_summary.md  
+Needs Needs eval_results_v2.csv from Nikhil + calibration clips from Sanat  
+ 🎬  Sachi  — System Integration Polish + Scenario Testing  
+1. Update integrate.py to load ppo_v2.zip instead of v1. Retest full pipeline on webcam.  
+2. Improve OpenCV display window: add a black info bar at the bottom of the frame showing — current 
+frame number, attention score, action label, violation count in session.  
+3. Test all 6 violation scenarios from Sanat's test_data folder by running integrate.py on each .mp4 file 
+(pass video file path instead of webcam index). Confirm correct detections on at least 4 of 6 scenarios.  
+4. Log test results per scenario: file name, expected action, actual action output, attention score. Save as 
+scenario_test_results.csv and share with Shakti.  
+Output ✓  Polished integrate.py + scenario_test_results.csv  
+Needs Needs ppo_v2.zip from Nikhil  
+ 
+📋  Sanat  — Documentation Progress Check + Scenario Support  
+1. Update system_architecture.md and course_alignment.md based on the actual modules that now exist 
+(after Day 2 integration). Replace any placeholders with real file names and descriptions.  
+2. Prepare 3 clear violation props for live testing alongside Sachi: phone, cigarette substitute, sunglasses 
+for drowsiness simulation. Run through each scenario once with Sachi to validate the test_data clips 
+match expected system behaviour.  
+3. Draft the project summary paragraph (200–250 words) for the README: problem statement, three-
+layer approach, novel Attention Score contribution. Share with team for review.  
+4. Review Nikhil's ppo_notes.md and ppo_training_report draft — suggest any clarifications or missing 
+details for the final report.  
+Output ✓  Updated architecture + course alignment docs + README summary draft  
+Needs No blocking dependencies — run in parallel  
+ 
+    DAY 4 — WEDNESDAY/THURSDAY    March 15–16    |   Final Integration + 
+Demo Recording + Submission  
+ 
+✅  Ragini  — Final RL Environment — Documentation + Stability  
+1. Add detailed docstrings to every method in rl_environment.py and obs_builder.py. Document what 
+each obs vector index represents, reward value meaning, and episode termination conditions.  
+2. Write rl_module_readme.md: covers environment design decisions, obs space definition, reward 
+function rationale, and how to instantiate and use the env.  
+3. Run a clean-boot test: fresh terminal, activate venv, run python rl_environment.py — confirm it 
+initialises without errors. Run gymnasium.utils.env_checker.check_env(env) one final time and confirm 
+it passes. 
+4. Coordinate with Sachi: confirm all import names in rl_environment.py and obs_builder.py exactly match 
+what final_integrate.py expects.  
+Output ✓  Fully documented rl_environment.py + obs_builder.py + rl_module_readme.md  
+Needs Final import -name sync with Sachi  
+ 
+📦  Nikhil  — Final Model + Training Report  
+1. Run final evaluation: evaluate_agent(ppo_v2, env, n_episodes=100). Save results to final_eval.csv.  
+2. Write ppo_training_report.md: list all hyperparameters used, describe the reward trajectory from 
+training_curve.png, compare v1 vs v2 performance from eval CSVs.  
+3. Clean-load test: open a fresh Python session, run: from stable_baselines3 import PPO; model = 
+PPO.load('ppo_v2.zip') — confirm it loads without error.  
+4. Run inference manually: obs = env.reset()[0]; action, _ = model.predict(obs); print(action) — confirm 
+output is 0, 1, or 2. Share confirmation with Sachi.  
+Output ✓  ppo_v2.zip finalized + ppo_training_report.md + final_eval.csv  
+Needs Final inference confirmation sync with Sachi  
+ 
+📑  Shakti  — Final Metrics Report + Attention Score Documentation  
+1. Generate final evaluation_summary_final.md from final_eval.csv (Nikhil). Include: confusion matrix, per-
+class precision/recall/F1, Attention Score distribution across all 6 scenarios.  
+2. Write attention_score_documentation.md: explain the formula, reasoning behind each weight, 
+calibration steps taken, and example computed scores for safe vs violation scenarios.  
+3. Organize all outputs into a /results/ folder: metrics_report_v2.txt, evaluation_summary_final.md, 
+attention_score_plot.png, training_curve.png.  
+4. Cross-check Sanat's course_alignment.md — verify each AI concept listed is accurately linked to the 
+actual implemented module. Flag any inaccuracies to Sanat to fix before final push.  
+Output ✓  /results/ folder with all metrics + attention_score_documentation.md  
+Needs Needs final_eval.csv from Nikhil   
+🔒  Sachi  — Final System Freeze + End-to-End Verification  
+1. Freeze integrate.py — rename to final_integrate.py. No further changes to this file after this point.  
+2. Create requirements.txt: activate the project venv and run pip freeze > requirements.txt.  
+3. Do a clean-boot full system test: fresh terminal, fresh venv, pip install -r requirements.txt, run python 
+final_integrate.py. Confirm every module loads and the webcam pipeline starts correctly.  
+4. Test final_integrate.py on all 6 of Sanat's .mp4 scenario files. Log which scenarios passed detection 
+correctly vs which did not. Share pass/fail summary with Shakti for evaluation_summary_final.md.  
+5. Write integration_notes.md: describes final module load order, known edge cases or limitations, and 
+any workarounds applied during integration.  
+Output ✓  final_integrate.py frozen + requirements.txt + integration_notes.md + scenario pass/fail log  
+Needs Needs ppo_v2.zip from Nikhil + final env from Ragini  
+ 
+📚  Sanat  — Final Documentation Consolidation  
+1. Finalize system_architecture.md, course_alignment.md, and README.md — replace all placeholders 
+with actual results from Shakti's metrics and Nikhil's training report.  
+2. Update README.md How to Run section: verify every step against Sachi's clean-boot test — 
+commands must work exactly as written.  
+3. Write a project summary paragraph (200–250 words) suitable for a project report: describe the 
+problem, the three-layer approach, the novel Attention Score metric, and key results. This goes at the 
+top of README.md.  
+4. Compile all documentation files into a /docs/ folder: system_architecture.md, course_alignment.md, 
+rl_module_readme.md, ppo_training_report.md, attention_score_documentation.md, 
+integration_notes.md.  
+Output ✓  /docs/ folder with all finalized documentation + updated README.md  
+Needs Needs metrics from Shakti + training report from Nikhil + integration notes from Sachi  
+ 
+  Daily Sync Points 
+Short 15-minute check-ins to unblock each other — do not skip these.  
+ 
+Sync When Agenda 
+Day 1 Evening  Sunday 8 PM  Ragini: confirm rl_environment.py runs. Shakti: share 
+attention_score.py. Nikhil: confirm PPO stub runs. Sachi: share 
+alert_logger.py. Sanat: share scenarios.csv.  
+Day 2 Morning  Monday 10 AM  Ragini + Nikhil: confirm real DriverEnv swapped into train_ppo.py. 
+Sachi: start integration only after this is green.  
+Day 2 Evening  Monday 9 PM  Sachi: demo end-to-end system to team. Everyone: identify and 
+assign any remaining blockers.  
+Day 3 Midday  Tuesday 1 PM  Nikhil: share ppo_v2.zip. Shakti: share calibrated 
+attention_score.py. Ragini: share final env. Everything converges 
+into Sachi's integrate.py.  
+Day 4 Morning  Wednesday 9 AM  Final system freeze. Sachi records demo. Everyone submits their 
+documentation to Sanat for packaging.  
+ 
+ 
+SmartRoad AI  |  IEEE CIS VIT Pune  |  ML2308 Artificial Intelligence  
